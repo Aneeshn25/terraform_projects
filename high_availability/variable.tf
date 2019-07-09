@@ -27,3 +27,16 @@ variable "availability_zones" {
   default = ["us-east-2a", "us-east-2b", "us-east-2c"]
   type = "list"
 }
+
+variable "ami" {
+	default = "ami-05bab2b5ef946e505"
+}
+
+variable "instance_type" {
+	default = "t2.micro"
+}
+
+variable "key_name" {
+  description = "Key name for SSHing into EC2"
+  default = "aneesh"
+}
