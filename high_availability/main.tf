@@ -190,7 +190,7 @@ resource "aws_launch_configuration" "lc" {
   instance_type    = "${var.instance_type}"
   security_groups  = ["${aws_security_group.lc_sg.id}"]
   key_name         = "${var.key_name}"
-  user_data        = "${data.template_file.api.rendered}"
+  user_data        = "${data.template_file.app.rendered}"
 
   lifecycle {
     create_before_destroy = true
