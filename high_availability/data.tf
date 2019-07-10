@@ -12,7 +12,7 @@ data "aws_ami" "ubuntu" {
 }
 
 data "template_file" "app" {
-  template = "${file(app.tpl")}"
+  template = "${file(app.tpl.sh")}"
   vars = {
     app = "nginx"
   }
