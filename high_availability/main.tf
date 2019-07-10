@@ -95,14 +95,14 @@ resource "aws_default_route_table" "private" {
 }
 
 resource "aws_route_table_association" "public" {
-  count = "${length(var.subnet_cidrs_public)}"
+  count          = "${length(var.subnet_cidrs_public)}"
 
   subnet_id      = "${element(aws_subnet.public.*.id, count.index)}"
   route_table_id = "${aws_route_table.public.id}"
 }
 
 resource "aws_route_table_association" "private" {
-  count = "${length(var.subnet_cidrs_private)}"
+  count          = "${length(var.subnet_cidrs_private)}"
 
   subnet_id      = "${element(aws_subnet.private.*.id, count.index)}"
   route_table_id = "${aws_default_route_table.private.id}"
@@ -113,18 +113,18 @@ resource "aws_route_table_association" "private" {
 
 ## Security Group for ELB
 resource "aws_security_group" "elb" {
-  name = "terraform-example-elb"
-  vpc_id      = "${aws_vpc.test.id}"
+  name          = "terraform-example-elb"
+  vpc_id        = "${aws_vpc.test.id}"
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
   ingress {
-    from_port = 80
-    to_port = 80
-    protocol = "tcp"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
@@ -134,16 +134,16 @@ resource "aws_security_group" "elb" {
 }
 
 resource "aws_elb" "elb" {
-  name               = "testelb"
-  security_groups    = ["${aws_security_group.elb.id}"]
-  #availability_zones = ["${var.availability_zones[0]}","${var.availability_zones[1]}","${var.availability_zones[2]}"]
-  subnets            = "${aws_subnet.public.*.id}"
+  name                  = "testelb"
+  security_groups       = ["${aws_security_group.elb.id}"]
+  #availability_zones   = ["${var.availability_zones[0]}","${var.availability_zones[1]}","${var.availability_zones[2]}"]
+  subnets               = "${aws_subnet.public.*.id}"
   health_check {
     healthy_threshold   = 2
     unhealthy_threshold = 2
-    timeout  = 3
-    interval = 30
-    target   = "HTTP:80/index.html"
+    timeout             = 3
+    interval            = 30
+    target              = "HTTP:80/index.html"
   }
   listener {
     lb_port = 80
@@ -153,6 +153,8 @@ resource "aws_elb" "elb" {
   }
 }
 
+#Security Group for Launch config
+ 
 resource "aws_security_group" "lc_sg" {
   name        = "lc_sg"
   description = "Allow HTTP inbound traffic"
@@ -179,17 +181,23 @@ resource "aws_security_group" "lc_sg" {
   #}
 }
 
+
+#Launch Configuration
+
 resource "aws_launch_configuration" "lc" {
   name_prefix      = "terraform-lc-"
-  image_id         = "${var.ami}"
+  image_id         = "${data.aws_ami.ubuntu.id}"
   instance_type    = "${var.instance_type}"
   security_groups  = ["${aws_security_group.lc_sg.id}"]
   key_name         = "${var.key_name}"
+  user_data        = "${data.template_file.api.rendered}"
 
   lifecycle {
     create_before_destroy = true
   }
 }
+
+#Autoscaling Group
 
 resource "aws_autoscaling_group" "asg" {
   name                 = "terraform-asg"
@@ -199,7 +207,7 @@ resource "aws_autoscaling_group" "asg" {
   max_size             = 4
   health_check_type    = "ELB"
   vpc_zone_identifier  = "${aws_subnet.public.*.id}"
-  load_balancers = ["${aws_elb.elb.name}"]
+  load_balancers       = ["${aws_elb.elb.name}"]
 
 
   lifecycle {
