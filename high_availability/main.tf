@@ -17,7 +17,6 @@ resource "aws_vpc" "test" {
 }
 
 
-
 #Public subnet
 resource "aws_subnet" "public" {
   count = "${length(var.subnet_cidrs_public)}"
@@ -25,12 +24,14 @@ resource "aws_subnet" "public" {
   vpc_id = "${aws_vpc.test.id}"
   cidr_block = "${var.subnet_cidrs_public[count.index]}"
   availability_zone = "${var.availability_zones[count.index]}"
+  map_public_ip_on_launch = true
 
   tags = {
     Name        = "${var.public_name[count.index]}"
     Environment = "${terraform.workspace}"
   }
 }
+
 
 #Private subnet
 resource "aws_subnet" "private" {
@@ -46,6 +47,7 @@ resource "aws_subnet" "private" {
   }
 }
 
+
 #Internet Gateway
 resource "aws_internet_gateway" "igw" {
   vpc_id = "${aws_vpc.test.id}"
@@ -55,22 +57,29 @@ resource "aws_internet_gateway" "igw" {
   }
 }
 
+
+#Elastic IP
 resource "aws_eip" "nat" {
   vpc      = true
 }
 
+
+#NAT gateway
 resource "aws_nat_gateway" "nat" {
   allocation_id = "${aws_eip.nat.id}"
-  subnet_id     = "${element(aws_subnet.private.*.id, 0)}"
+  subnet_id     = "${element(aws_subnet.public.*.id, 0)}"
 
   tags = {
     Name = "test_NAT"
   }
 }
 
+
+#route table for public subnet 
 resource "aws_route_table" "public" {
   vpc_id = "${aws_vpc.test.id}"
   
+  #adding internet gateway
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = "${aws_internet_gateway.igw.id}"
@@ -81,9 +90,12 @@ resource "aws_route_table" "public" {
   }
 }
 
+
+#default route table for private subnet
 resource "aws_default_route_table" "private" {
   default_route_table_id = "${aws_vpc.test.default_route_table_id}"
-
+  
+  #adding nat gateway
   route {
       cidr_block = "0.0.0.0/0"
       nat_gateway_id = "${aws_nat_gateway.nat.id}"
@@ -94,6 +106,8 @@ resource "aws_default_route_table" "private" {
   }
 }
 
+
+#public route table association
 resource "aws_route_table_association" "public" {
   count          = "${length(var.subnet_cidrs_public)}"
 
@@ -101,14 +115,13 @@ resource "aws_route_table_association" "public" {
   route_table_id = "${aws_route_table.public.id}"
 }
 
+#private route table association
 resource "aws_route_table_association" "private" {
   count          = "${length(var.subnet_cidrs_private)}"
 
   subnet_id      = "${element(aws_subnet.private.*.id, count.index)}"
   route_table_id = "${aws_default_route_table.private.id}"
 }
-
-
 
 
 ## Security Group for ELB
@@ -133,6 +146,8 @@ resource "aws_security_group" "elb" {
   }
 }
 
+
+#Elastic load balancing
 resource "aws_elb" "elb" {
   name                  = "testelb"
   security_groups       = ["${aws_security_group.elb.id}"]
@@ -153,37 +168,43 @@ resource "aws_elb" "elb" {
   }
 }
 
+
 #Security Group for Launch config
- 
 resource "aws_security_group" "lc_sg" {
   name        = "lc_sg"
   description = "Allow HTTP inbound traffic"
   vpc_id      = "${aws_vpc.test.id}"
 
-  # allow http
+  #allow http
   ingress {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  #allow ssh
+  #ingress {
+  #  from_port   = 22
+  #  to_port     = 22
+  #  protocol    = "tcp"
+  #  cidr_blocks = ["0.0.0.0/0"]
+  #}
 
   tags = {
         Name = "Security Group lc"
   }
 
   
-  #egress {
-  #  from_port       = 0
-  #  to_port         = 0
-  #  protocol        = "-1"
-  #  cidr_blocks     = ["0.0.0.0/0"]
-  #}
+  egress {
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    cidr_blocks     = ["0.0.0.0/0"]
+  }
 }
 
 
 #Launch Configuration
-
 resource "aws_launch_configuration" "lc" {
   name_prefix      = "terraform-lc-"
   image_id         = "${data.aws_ami.ubuntu.id}"
@@ -197,8 +218,8 @@ resource "aws_launch_configuration" "lc" {
   }
 }
 
-#Autoscaling Group
 
+#Autoscaling Group
 resource "aws_autoscaling_group" "asg" {
   name                 = "terraform-asg"
   launch_configuration = "${aws_launch_configuration.lc.name}"
@@ -206,7 +227,7 @@ resource "aws_autoscaling_group" "asg" {
   desired_capacity     = 2
   max_size             = 4
   health_check_type    = "ELB"
-  vpc_zone_identifier  = "${aws_subnet.public.*.id}"
+  vpc_zone_identifier  = "${aws_subnet.private.*.id}"
   load_balancers       = ["${aws_elb.elb.name}"]
 
 
