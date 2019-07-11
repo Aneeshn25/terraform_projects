@@ -1,8 +1,8 @@
 #AWS Provider
 provider "aws" {
-  region = "us-east-2"
-  access_key = "" 
-  secret_key = ""
+  region = "${var.AWS_REGION}"
+  access_key = "${var.AWS_ACCESS_KEY}" 
+  secret_key = "${var.AWS_SECRET_KEY}"
 }
 
 
@@ -15,6 +15,7 @@ resource "aws_vpc" "test" {
     Name = "test_vpc"
   }
 }
+
 
 
 #Public subnet
@@ -60,14 +61,16 @@ resource "aws_internet_gateway" "igw" {
 
 #Elastic IP
 resource "aws_eip" "nat" {
+  count    = "3"
   vpc      = true
 }
 
 
 #NAT gateway
 resource "aws_nat_gateway" "nat" {
-  allocation_id = "${aws_eip.nat.id}"
-  subnet_id     = "${element(aws_subnet.public.*.id, 0)}"
+  count         = "3"
+  allocation_id = "${element(aws_eip.nat.*.id, count.index)}"
+  subnet_id     = "${element(aws_subnet.public.*.id, count.index)}"
 
   tags = {
     Name = "test_NAT"
@@ -76,12 +79,13 @@ resource "aws_nat_gateway" "nat" {
 
 
 #route table for public subnet 
-resource "aws_route_table" "public" {
-  vpc_id = "${aws_vpc.test.id}"
+resource "aws_default_route_table" "public" {
+  default_route_table_id = "${aws_vpc.test.default_route_table_id}"
+  
   
   #adding internet gateway
   route {
-    cidr_block = "0.0.0.0/0"
+    cidr_block  = "0.0.0.0/0"
     gateway_id = "${aws_internet_gateway.igw.id}"
   }
 
@@ -90,29 +94,30 @@ resource "aws_route_table" "public" {
   }
 }
 
-
 #default route table for private subnet
-resource "aws_default_route_table" "private" {
-  default_route_table_id = "${aws_vpc.test.default_route_table_id}"
-  
-  #adding nat gateway
-  route {
-      cidr_block = "0.0.0.0/0"
-      nat_gateway_id = "${aws_nat_gateway.nat.id}"
-  }
 
+resource "aws_route_table" "private" {
+  count  = "${length(var.subnet_cidrs_private)}"
+  vpc_id = "${aws_vpc.test.id}"
+  
   tags = {
-    Name = "Private_rt"
+    Name = "${var.private_rt[count.index]}"
   }
 }
 
+resource "aws_route" "gw" {
+  count          = "${length(var.subnet_cidrs_private)}"
+  route_table_id = "${element(aws_route_table.private.*.id,count.index)}"
+  destination_cidr_block = "0.0.0.0/0"
+  nat_gateway_id = "${element(aws_nat_gateway.nat.*.id,count.index)}"
+}
 
 #public route table association
 resource "aws_route_table_association" "public" {
   count          = "${length(var.subnet_cidrs_public)}"
 
   subnet_id      = "${element(aws_subnet.public.*.id, count.index)}"
-  route_table_id = "${aws_route_table.public.id}"
+  route_table_id = "${aws_default_route_table.public.id}"
 }
 
 #private route table association
@@ -120,7 +125,7 @@ resource "aws_route_table_association" "private" {
   count          = "${length(var.subnet_cidrs_private)}"
 
   subnet_id      = "${element(aws_subnet.private.*.id, count.index)}"
-  route_table_id = "${aws_default_route_table.private.id}"
+  route_table_id = "${element(aws_route_table.private.*.id, count.index)}"
 }
 
 
@@ -204,6 +209,7 @@ resource "aws_security_group" "lc_sg" {
 }
 
 
+
 #Launch Configuration
 resource "aws_launch_configuration" "lc" {
   name_prefix      = "terraform-lc-"
@@ -230,8 +236,68 @@ resource "aws_autoscaling_group" "asg" {
   vpc_zone_identifier  = "${aws_subnet.private.*.id}"
   load_balancers       = ["${aws_elb.elb.name}"]
 
+  tags = [
+    {
+      key                 = "Name"
+      value               = "${var.instance_name_autogroup}"
+      propagate_at_launch = true
+    },
+  ]
 
   lifecycle {
     create_before_destroy = true
   }
+}
+
+# scale up alarm
+resource "aws_autoscaling_policy" "asg-cpu-policy" {
+    name = "asg-cpu-policy"
+    autoscaling_group_name = "${aws_autoscaling_group.asg.name}"
+    adjustment_type = "ChangeInCapacity"
+    scaling_adjustment = "1"
+    cooldown = "300"
+    policy_type = "SimpleScaling"
+}
+resource "aws_cloudwatch_metric_alarm" "asg-cpu-alarm" {
+    alarm_name = "${aws_autoscaling_group.asg.name}-cpu-alarm"
+    alarm_description = "asg-cpu-alarm"
+    comparison_operator = "GreaterThanOrEqualToThreshold"
+    evaluation_periods = "2"
+    namespace = "AWS/EC2"
+    statistic = "Average"
+    metric_name = "CPUUtilization"
+    period = "120"
+    threshold = "80"
+    dimensions = {
+    "AutoScalingGroupName" = "${aws_autoscaling_group.asg.name}"
+}
+actions_enabled = true
+    alarm_actions = ["${aws_autoscaling_policy.asg-cpu-policy.arn}"]
+}
+
+
+# scale down alarm
+resource "aws_autoscaling_policy" "cpu-policy-scaledown" {
+    name = "example-cpu-policy-scaledown"
+    autoscaling_group_name = "${aws_autoscaling_group.asg.name}"
+    adjustment_type = "ChangeInCapacity"
+    scaling_adjustment = "-1"
+    cooldown = "300"
+    policy_type = "SimpleScaling"
+}
+resource "aws_cloudwatch_metric_alarm" "cpu-alarm-scaledown" {
+    alarm_name = "${aws_autoscaling_group.asg.name}-cpu-alarm-scaledown"
+    alarm_description = "cpu-alarm-scaledown"
+    comparison_operator = "LessThanOrEqualToThreshold"
+    evaluation_periods = "2"
+    metric_name = "CPUUtilization"
+    namespace = "AWS/EC2"
+    period = "120"
+    statistic = "Average"
+    threshold = "50"
+    dimensions = {
+    "AutoScalingGroupName" = "${aws_autoscaling_group.asg.name}"
+}
+actions_enabled = true
+    alarm_actions = ["${aws_autoscaling_policy.cpu-policy-scaledown.arn}"]
 }
