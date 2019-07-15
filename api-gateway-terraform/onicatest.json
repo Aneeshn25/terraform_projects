@@ -4,7 +4,7 @@
             "PutRequest": {
                 "Item": {
                     "id": {"S": "1"},
-                    "details" : { "M": {  "firstName" : { "S" : "Aneesh" },  "lastName" : { "S" : "N" }}}
+                    "details" : { "M": {  "firstName" : { "S" : "Aneesh" },  "lastName" : { "S" : "Nelavelly" }}}
                 }
             }
         },
@@ -12,7 +12,7 @@
             "PutRequest": {
                 "Item": {
                     "id": {"S": "2"},
-                    "details" : { "M": {  "firstName" : { "S" : "Ramu" },  "lastName" : { "S" : "J" }}}
+                    "details" : { "M": {  "firstName" : { "S" : "Ramu" },  "lastName" : { "S" : "Jonna" }}}
                 }
             }
         },
@@ -20,7 +20,7 @@
             "PutRequest": {
                 "Item": {
                     "id": {"S": "3"},
-                    "details" : { "M": {  "firstName" : { "S" : "John" },  "lastName" : { "S" : "C" }}}
+                    "details" : { "M": {  "firstName" : { "S" : "John" },  "lastName" : { "S" : "Cena" }}}
                 }
             }
         },
@@ -28,7 +28,7 @@
             "PutRequest": {
                 "Item": {
                     "id": {"S": "4"},
-                    "details" : { "M": {  "firstName" : { "S" : "Mitchel" },  "lastName" : { "S" : "S" }}}
+                    "details" : { "M": {  "firstName" : { "S" : "Mitchel" },  "lastName" : { "S" : "Starc" }}}
                 }
             }
         }
