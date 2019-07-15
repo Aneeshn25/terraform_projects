@@ -225,8 +225,8 @@ resource "aws_launch_configuration" "lc" {
 resource "aws_autoscaling_group" "asg" {
   name                 = "terraform-asg"
   launch_configuration = "${aws_launch_configuration.lc.name}"
-  min_size             = 1
-  desired_capacity     = 2
+  min_size             = 2
+  desired_capacity     = 3
   max_size             = 4
   health_check_type    = "ELB"
   vpc_zone_identifier  = "${aws_subnet.private.*.id}"
