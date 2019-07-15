@@ -184,6 +184,21 @@ resource "aws_api_gateway_deployment" "prod" {
 
 }
 
+#logs to cloudwatch 
+#resource "aws_api_gateway_account" "onicatest" {
+#  cloudwatch_role_arn = "${aws_iam_role.LambdaDynamoAPICloudWatch.arn}"
+#}
+
+resource "aws_cloudwatch_log_group" "lambdacloudwatchlogs" {
+  name              = "lambdacloudwatchlogs"
+  retention_in_days = 30
+}
+
+#resource "aws_cloudwatch_log_stream" "onicatest" {
+#  name           = "SampleLogStream1234"
+#  log_group_name = "${aws_cloudwatch_log_group.lambdacloudwatchlogs.name}"
+#}
+
 #OUTPUT of basr url of the stages
 output "dev_base_url" {
   value = "${aws_api_gateway_deployment.dev.invoke_url}"
