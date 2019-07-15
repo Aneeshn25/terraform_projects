@@ -3,7 +3,7 @@ variable "AWS_SECRET_KEY" { default = "secret_key" }
 variable "AWS_REGION" { default = "us-east-2" }
 variable "AWS_ACCOUNT" { default = "account_number" }
 variable "table_name" {
-  default = "onicatest"
+  default = "onicaTest"
 }
 
 variable "hash" {
