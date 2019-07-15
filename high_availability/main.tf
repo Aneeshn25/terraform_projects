@@ -12,10 +12,9 @@ resource "aws_vpc" "test" {
   instance_tenancy = "default"
 
   tags = {
-    Name = "test_vpc"
+    Name = "onica_test_vpc"
   }
 }
-
 
 
 #Public subnet
@@ -81,7 +80,6 @@ resource "aws_nat_gateway" "nat" {
 #route table for public subnet 
 resource "aws_default_route_table" "public" {
   default_route_table_id = "${aws_vpc.test.default_route_table_id}"
-  
   
   #adding internet gateway
   route {
@@ -198,7 +196,6 @@ resource "aws_security_group" "lc_sg" {
   tags = {
         Name = "Security Group lc"
   }
-
   
   egress {
     from_port       = 0
@@ -207,7 +204,6 @@ resource "aws_security_group" "lc_sg" {
     cidr_blocks     = ["0.0.0.0/0"]
   }
 }
-
 
 
 #Launch Configuration
