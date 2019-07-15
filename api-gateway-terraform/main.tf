@@ -41,18 +41,21 @@ resource "aws_api_gateway_rest_api" "onicaTestAPI" {
   }
 }
 
+#Creating resource "id"
 resource "aws_api_gateway_resource" "id-api-resource" {
   rest_api_id = "${aws_api_gateway_rest_api.onicaTestAPI.id}"
   parent_id   = "${aws_api_gateway_rest_api.onicaTestAPI.root_resource_id}"
   path_part   = "id"
 }
 
+#creating resource "{idno}"
 resource "aws_api_gateway_resource" "idno-api-resource" {
   rest_api_id = "${aws_api_gateway_rest_api.onicaTestAPI.id}"
   parent_id   = "${aws_api_gateway_resource.id-api-resource.id}"
   path_part   = "{idno}"
 }
 
+#creating method GET for resource "id"
 resource "aws_api_gateway_method" "idGetMethod" {
   rest_api_id   = "${aws_api_gateway_rest_api.onicaTestAPI.id}"
   resource_id   = "${aws_api_gateway_resource.id-api-resource.id}"
@@ -60,6 +63,7 @@ resource "aws_api_gateway_method" "idGetMethod" {
   authorization = "NONE"
 }
 
+#creating method GET for resource "{idno}"
 resource "aws_api_gateway_method" "idnoGetMethod" {
   rest_api_id   = "${aws_api_gateway_rest_api.onicaTestAPI.id}"
   resource_id   = "${aws_api_gateway_resource.idno-api-resource.id}"
@@ -67,6 +71,7 @@ resource "aws_api_gateway_method" "idnoGetMethod" {
   authorization = "NONE"
 }
 
+#creating api gateway permissions for lambda_fuction "getIdsFromOnicatest"
 resource "aws_lambda_permission" "apigw_lambda_id" {
   statement_id  = "AllowExecutionFromAPIGatewayId"
   action        = "lambda:InvokeFunction"
@@ -76,6 +81,7 @@ resource "aws_lambda_permission" "apigw_lambda_id" {
   source_arn = "arn:aws:execute-api:${var.AWS_REGION}:${var.AWS_ACCOUNT}:${aws_api_gateway_rest_api.onicaTestAPI.id}/*/${aws_api_gateway_method.idGetMethod.http_method}${aws_api_gateway_resource.id-api-resource.path}"
 }
 
+#creating api gateway permissions for lambda_fuction "getIdsItemFromOnicatest"
 resource "aws_lambda_permission" "apigw_lambda_idItems" {
   statement_id  = "AllowExecutionFromAPIGatewayIdItems"
   action        = "lambda:InvokeFunction"
@@ -85,6 +91,7 @@ resource "aws_lambda_permission" "apigw_lambda_idItems" {
   source_arn = "arn:aws:execute-api:${var.AWS_REGION}:${var.AWS_ACCOUNT}:${aws_api_gateway_rest_api.onicaTestAPI.id}/*/${aws_api_gateway_method.idnoGetMethod.http_method}${aws_api_gateway_resource.idno-api-resource.path}"
 }
 
+#creating api gateway integration for resource "id" GET method 
 resource "aws_api_gateway_integration" "id-lambda-api-integration" {
   rest_api_id = "${aws_api_gateway_rest_api.onicaTestAPI.id}"
   resource_id = "${aws_api_gateway_resource.id-api-resource.id}"
@@ -94,10 +101,9 @@ resource "aws_api_gateway_integration" "id-lambda-api-integration" {
   uri                     = "${aws_lambda_function.getIdsFromOnicatest.invoke_arn}"
   #uri                     = "arn:aws:apigateway:${var.AWS_REGION}:lambda:path/2015-03-31/functions/${aws_lambda_function.getIdsFromOnicatest.arn}/invocations"
   credentials             = "${aws_iam_role.LambdaDynamoAPICloudWatch.arn}"
-
-  
 }
 
+#creating method response for resource "id" GET method
 resource "aws_api_gateway_method_response" "id-lambda-api-method-response" {
   rest_api_id = "${aws_api_gateway_rest_api.onicaTestAPI.id}"
   resource_id = "${aws_api_gateway_resource.id-api-resource.id}"
@@ -105,6 +111,7 @@ resource "aws_api_gateway_method_response" "id-lambda-api-method-response" {
   status_code = "200"
 }
 
+#creating integration response for resource "id" GET method
 resource "aws_api_gateway_integration_response" "id-lambda-api-integration-response" {
   rest_api_id = "${aws_api_gateway_rest_api.onicaTestAPI.id}"
   resource_id = "${aws_api_gateway_resource.id-api-resource.id}"
@@ -122,6 +129,7 @@ resource "aws_api_gateway_integration_response" "id-lambda-api-integration-respo
   ]
 }
 
+#creating api gateway integration for resource "{idno}" GET method 
 resource "aws_api_gateway_integration" "idno-lambda-api-integration" {
   rest_api_id = "${aws_api_gateway_rest_api.onicaTestAPI.id}"
   resource_id = "${aws_api_gateway_resource.idno-api-resource.id}"
@@ -142,6 +150,7 @@ EOF
 }
 
 
+#creating method response for resource "{idno}" GET method
 resource "aws_api_gateway_method_response" "idno-lambda-api-method-response" {
   rest_api_id = "${aws_api_gateway_rest_api.onicaTestAPI.id}"
   resource_id = "${aws_api_gateway_resource.idno-api-resource.id}"
@@ -150,6 +159,7 @@ resource "aws_api_gateway_method_response" "idno-lambda-api-method-response" {
 
 }
 
+#creating integration response for resource "{idno}" GET method
 resource "aws_api_gateway_integration_response" "idno-lambda-api-integration-response" {
   rest_api_id = "${aws_api_gateway_rest_api.onicaTestAPI.id}"
   resource_id = "${aws_api_gateway_resource.idno-api-resource.id}"
@@ -177,7 +187,7 @@ resource "aws_api_gateway_deployment" "dev" {
 }
 
 resource "aws_api_gateway_deployment" "prod" {
-  depends_on = ["aws_api_gateway_integration.id-lambda-api-integration","aws_api_gateway_integration.idno-lambda-api-integration"]
+  depends_on = ["aws_api_gateway_integration.id-lambda-api-integration","aws_api_gateway_integration.idno-lambda-api-integration","aws_api_gateway_deployment.dev"]
 
   rest_api_id = "${aws_api_gateway_rest_api.onicaTestAPI.id}"
   stage_name  = "prod"
