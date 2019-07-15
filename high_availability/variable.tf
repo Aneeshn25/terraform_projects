@@ -17,22 +17,22 @@ variable "subnet_cidrs_private" {
 }
 
 variable "instance_name_autogroup" {
-	default = "webserver-asg-test"
+	default = "webserver-asg-test-onica"
 }
 
 variable "public_name" {
 	type    = "list"
-	default = ["subnet-public-us-e2a", "subnet-public-us-e2b", "subnet-public-us-e2c"]
+	default = ["onica-subnet-public-us-e2a", "onica-subnet-public-us-e2b", "onica-subnet-public-us-e2c"]
 }
 
 variable "private_name" {
 	type    = "list"
-	default = ["subnet-private-us-e2a", "subnet-private-us-e2b", "subnet-private-us-e2c"]
+	default = ["onica-subnet-private-us-e2a", "onica-subnet-private-us-e2b", "onica-subnet-private-us-e2c"]
 }
 
 variable "private_rt" {
 	type    = "list"
-	default = ["private-rt-1", "private-rt-2", "private-rt-3"]
+	default = ["onica-private-rt-1", "onica-private-rt-2", "onica-private-rt-3"]
 }
 
 variable "availability_zones" {
