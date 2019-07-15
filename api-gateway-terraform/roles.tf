@@ -68,3 +68,31 @@ resource "aws_iam_role_policy" "dynamoGetScanQueryItemRole" {
 }
 EOF
 }
+
+
+
+resource "aws_iam_role_policy" "CloudWatchLogs" {
+  name = "CloudWatchLogs"
+  role = "${aws_iam_role.LambdaDynamoAPICloudWatch.id}"
+
+  policy = <<EOF
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:DescribeLogGroups",
+        "logs:DescribeLogStreams",
+        "logs:PutLogEvents",
+        "logs:GetLogEvents",
+        "logs:FilterLogEvents"
+      ],
+      "Resource": "*",
+      "Effect": "Allow"
+    }
+  ]
+}
+EOF
+}
