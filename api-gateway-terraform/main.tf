@@ -207,12 +207,3 @@ resource "aws_cloudwatch_log_group" "lambdacloudwatchlogs" {
 #  name           = "SampleLogStream1234"
 #  log_group_name = "${aws_cloudwatch_log_group.lambdacloudwatchlogs.name}"
 #}
-
-#OUTPUT of basr url of the stages
-output "dev_base_url" {
-  value = "${aws_api_gateway_deployment.dev.invoke_url}"
-}
-
-output "prod_base_url" {
-  value = "${aws_api_gateway_deployment.prod.invoke_url}"
-}

@@ -16,7 +16,7 @@ resource "aws_lambda_function" "getIdsFromOnicatest" {
   runtime          = "python3.7"
   filename         = "getIdsFromOnicatest/lambda_function.zip"
   function_name    = "getIdsFromOnicatest"
-  source_code_hash = "${filebase64sha256("getIdsFromOnicatest/lambda_function.zip")}"
+  source_code_hash = "${data.archive_file.lambdagetIds.output_base64sha256}"
   depends_on       = ["aws_cloudwatch_log_group.lambdacloudwatchlogs"]
 
   environment {
@@ -32,7 +32,7 @@ resource "aws_lambda_function" "getIdItemsFromOnicatest" {
   runtime          = "python3.7"
   filename         = "getIdItemsFromOnicatest/lambda_function.zip"
   function_name    = "getIdItemsFromOnicatest"
-  source_code_hash = "${filebase64sha256("getIdItemsFromOnicatest/lambda_function.zip")}"
+  source_code_hash = "${data.archive_file.lambdagetIdItems.output_base64sha256}"
   depends_on       = ["aws_cloudwatch_log_group.lambdacloudwatchlogs"]
 
   environment {
