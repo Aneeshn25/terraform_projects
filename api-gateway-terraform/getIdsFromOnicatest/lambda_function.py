@@ -16,4 +16,5 @@ def lambda_handler(event, context):
             KeyConditionExpression=Key('id').eq(str(j))
         )
         result.append(response['Items'])
+    print(result)
     return result

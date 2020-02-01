@@ -4,7 +4,8 @@ dynamodb = boto3.resource('dynamodb')
 table = dynamodb.Table('onicaTest')
 
 def lambda_handler(event, context):
-    id = ''
+    id = []
+    item = []
     try:
         id = event['idno']
         test = int(id)
@@ -14,8 +15,8 @@ def lambda_handler(event, context):
                 'id': id
                 }
             )
-            item = response['Item']
+            item.append(response['Item'])
             print(item)
-            return str(item)
+            return item
     except:
         return ("something went wrong")

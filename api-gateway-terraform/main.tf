@@ -1,7 +1,6 @@
 provider "aws" {
   region = "${var.AWS_REGION}"
-  access_key = "${var.AWS_ACCESS_KEY}" 
-  secret_key = "${var.AWS_SECRET_KEY}"
+  version = "~> 2.4"
 }
 
 #Creating a Dynamodb table onicatest

@@ -1,3 +1,15 @@
+data "archive_file" "lambdagetIds" {
+  type        = "zip"
+  source_file = "${path.module}/getIdsFromOnicatest/lambda_function.py"
+  output_path = "${path.module}/getIdsFromOnicatest/lambda_function.zip"
+}
+
+data "archive_file" "lambdagetIdItems" {
+  type        = "zip"
+  source_file = "${path.module}/getIdItemsFromOnicatest/lambda_function.py"
+  output_path = "${path.module}/getIdItemsFromOnicatest/lambda_function.zip"
+}
+
 resource "aws_lambda_function" "getIdsFromOnicatest" {
   role             = "${aws_iam_role.LambdaDynamoAPICloudWatch.arn}"
   handler          = "lambda_function.lambda_handler"
