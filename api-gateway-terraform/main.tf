@@ -244,14 +244,6 @@ resource "aws_api_gateway_deployment" "prod" {
 
 }
 
-resource "aws_api_gateway_deployment" "qaone" {
-  depends_on = ["aws_api_gateway_integration.id-lambda-api-integration","aws_api_gateway_integration.idno-lambda-api-integration","aws_api_gateway_deployment.dev"]
-
-  rest_api_id = "${aws_api_gateway_rest_api.onicaTestAPI.id}"
-  stage_name  = "qaone"
-
-}
-
 #logs to cloudwatch 
 #resource "aws_api_gateway_account" "onicatest" {
 #  cloudwatch_role_arn = "${aws_iam_role.LambdaDynamoAPICloudWatch.arn}"
