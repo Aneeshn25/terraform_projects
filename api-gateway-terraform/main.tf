@@ -54,6 +54,13 @@ resource "aws_api_gateway_resource" "idno-api-resource" {
   path_part   = "{idno}"
 }
 
+#creating resource "postit"
+resource "aws_api_gateway_resource" "postit-api-resource" {
+  rest_api_id = "${aws_api_gateway_rest_api.onicaTestAPI.id}"
+  parent_id   = "${aws_api_gateway_rest_api.onicaTestAPI.root_resource_id}"
+  path_part   = "postit"
+}
+
 #creating method GET for resource "id"
 resource "aws_api_gateway_method" "idGetMethod" {
   rest_api_id   = "${aws_api_gateway_rest_api.onicaTestAPI.id}"
@@ -67,6 +74,14 @@ resource "aws_api_gateway_method" "idnoGetMethod" {
   rest_api_id   = "${aws_api_gateway_rest_api.onicaTestAPI.id}"
   resource_id   = "${aws_api_gateway_resource.idno-api-resource.id}"
   http_method   = "GET"
+  authorization = "NONE"
+}
+
+#creating method POST for resource "postit"
+resource "aws_api_gateway_method" "postitPostMethod" {
+  rest_api_id   = "${aws_api_gateway_rest_api.onicaTestAPI.id}"
+  resource_id   = "${aws_api_gateway_resource.postit-api-resource.id}"
+  http_method   = "POST"
   authorization = "NONE"
 }
 
@@ -90,6 +105,15 @@ resource "aws_lambda_permission" "apigw_lambda_idItems" {
   source_arn = "arn:aws:execute-api:${var.AWS_REGION}:${var.AWS_ACCOUNT}:${aws_api_gateway_rest_api.onicaTestAPI.id}/*/${aws_api_gateway_method.idnoGetMethod.http_method}${aws_api_gateway_resource.idno-api-resource.path}"
 }
 
+resource "aws_lambda_permission" "apigw_lambda_postit" {
+  statement_id  = "AllowExecutionFromAPIGatewayPostit"
+  action        = "lambda:InvokeFunction"
+  function_name = "${aws_lambda_function.postItemsToOnicatest.function_name}"
+  principal     = "apigateway.amazonaws.com"
+
+  source_arn = "arn:aws:execute-api:${var.AWS_REGION}:${var.AWS_ACCOUNT}:${aws_api_gateway_rest_api.onicaTestAPI.id}/*/${aws_api_gateway_method.postitPostMethod.http_method}${aws_api_gateway_resource.postit-api-resource.path}"
+}
+
 #creating api gateway integration for resource "id" GET method 
 resource "aws_api_gateway_integration" "id-lambda-api-integration" {
   rest_api_id = "${aws_api_gateway_rest_api.onicaTestAPI.id}"
@@ -98,7 +122,6 @@ resource "aws_api_gateway_integration" "id-lambda-api-integration" {
   integration_http_method = "POST"
   type                    = "AWS"
   uri                     = "${aws_lambda_function.getIdsFromOnicatest.invoke_arn}"
-  #uri                     = "arn:aws:apigateway:${var.AWS_REGION}:lambda:path/2015-03-31/functions/${aws_lambda_function.getIdsFromOnicatest.arn}/invocations"
   credentials             = "${aws_iam_role.LambdaDynamoAPICloudWatch.arn}"
 }
 
@@ -136,7 +159,6 @@ resource "aws_api_gateway_integration" "idno-lambda-api-integration" {
   integration_http_method = "POST"
   type                    = "AWS"
   uri                     = "${aws_lambda_function.getIdItemsFromOnicatest.invoke_arn}"
-  #uri                     = "arn:aws:apigateway:${var.AWS_REGION}:lambda:path/2015-03-31/functions/${aws_lambda_function.getIdItemsFromOnicatest.arn}/invocations"
   credentials             = "${aws_iam_role.LambdaDynamoAPICloudWatch.arn}"
 
   request_templates = {
@@ -147,7 +169,6 @@ resource "aws_api_gateway_integration" "idno-lambda-api-integration" {
 EOF
   }
 }
-
 
 #creating method response for resource "{idno}" GET method
 resource "aws_api_gateway_method_response" "idno-lambda-api-method-response" {
@@ -173,6 +194,44 @@ resource "aws_api_gateway_integration_response" "idno-lambda-api-integration-res
   }
   depends_on = [
       "aws_api_gateway_integration.idno-lambda-api-integration"
+  ]
+}
+
+#creating api gateway integration for resource "postit" GET method 
+resource "aws_api_gateway_integration" "postit-lambda-api-integration" {
+  rest_api_id = "${aws_api_gateway_rest_api.onicaTestAPI.id}"
+  resource_id = "${aws_api_gateway_resource.postit-api-resource.id}"
+  http_method = "${aws_api_gateway_method.postitPostMethod.http_method}"
+  integration_http_method = "POST"
+  type                    = "AWS"
+  uri                     = "${aws_lambda_function.postItemsToOnicatest.invoke_arn}"
+  credentials             = "${aws_iam_role.LambdaDynamoAPICloudWatch.arn}"
+}
+
+#creating method response for resource "postit" GET method
+resource "aws_api_gateway_method_response" "postit-lambda-api-method-response" {
+  rest_api_id = "${aws_api_gateway_rest_api.onicaTestAPI.id}"
+  resource_id = "${aws_api_gateway_resource.postit-api-resource.id}"
+  http_method = "${aws_api_gateway_method.postitPostMethod.http_method}"
+  status_code = "200"
+
+}
+
+#creating integration response for resource "postit" GET method
+resource "aws_api_gateway_integration_response" "postit-lambda-api-integration-response" {
+  rest_api_id = "${aws_api_gateway_rest_api.onicaTestAPI.id}"
+  resource_id = "${aws_api_gateway_resource.postit-api-resource.id}"
+  http_method = "${aws_api_gateway_method.postitPostMethod.http_method}"
+
+  status_code = "${aws_api_gateway_method_response.postit-lambda-api-method-response.status_code}"
+
+  # Configure the Velocity response template for the application/json MIME type
+  response_templates = {
+    "application/json" = <<EOF
+    EOF
+  }
+  depends_on = [
+      "aws_api_gateway_integration.postit-lambda-api-integration"
   ]
 }
 
