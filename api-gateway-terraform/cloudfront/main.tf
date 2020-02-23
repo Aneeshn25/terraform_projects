@@ -4,12 +4,12 @@ provider "aws" {
 }
 
 // -------- Data Remote State VPC --------- //
-data "terraform_remote_state" "onica_terraform" {
+data "terraform_remote_state" "onica_api_gateway" {
   backend = "s3"
 
   config = {
     bucket   = "${var.bucket_remote_state}"
-    key      = "env:/${var.workspace}/terraform/terraform.tfstate"
+    key      = "env:/${var.workspace}/api_gateway/terraform.tfstate"
     region   = "${var.bucket_region}"
     role_arn = "${var.tf_mgmt_role_arn}"
   }
@@ -18,7 +18,7 @@ data "terraform_remote_state" "onica_terraform" {
 
 resource "aws_cloudfront_distribution" "api_gateway_distribution" {
   origin {
-    domain_name = replace(data.terraform_remote_state.onica_terraform.outputs.prod_base_url, "/^https?://([^/]*).*/", "$1")
+    domain_name = replace(data.terraform_remote_state.onica_api_gateway.outputs.prod_base_url, "/^https?://([^/]*).*/", "$1")
     origin_id   = "${var.api_orgin_id}"
     origin_path = "/prod"
 
