@@ -1,0 +1,4 @@
+{
+    "id": {"S": "1"},
+    "details" : { "M": {  "firstName" : { "S" : "Aneesh" },  "lastName" : { "S" : "N" }}}
+}

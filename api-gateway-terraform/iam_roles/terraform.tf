@@ -4,7 +4,7 @@ terraform {
     bucket         = "aneesh-terraform-remote-state-storage"
     dynamodb_table = "aneesh-terraform-state-locks"
     region         = "us-east-2"
-    key            = "terraform/terraform.tfstate"
+    key            = "iam_roles/terraform.tfstate"
     profile        = "aneesh"
     role_arn       = "arn:aws:iam::847058713959:role/terraform_management"
   }
